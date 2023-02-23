@@ -1,10 +1,7 @@
 package com.nttdata.bc.services.impl;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
@@ -14,6 +11,7 @@ import com.nttdata.bc.models.Promotion;
 import com.nttdata.bc.services.IPromotionService;
 
 import io.quarkus.redis.datasource.ReactiveRedisDataSource;
+import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -67,23 +65,14 @@ public class PromotionServiceImpl implements IPromotionService {
     }
 
     @Override
-    public Uni<List<Promotion>> listAll() {
+    public Multi<Promotion> listAll() {
         return this.reactiveRedisDataSource.key().keys(patternKey + "*")
-                .onItem().ifNotNull()
-                .transformToUni(keys -> {
-                    LOGGER.info("listAll ::: keys ::: " + keys);
-                    List<Promotion> promotions = new ArrayList<>();
-
-                    promotions = keys.stream().map(key -> {
-                        LOGGER.info("stream ::: keys ::: " + key);
-                        Promotion promotion = this.reactiveRedisDataSource
-                                .value(String.class, Promotion.class)
-                                .get(key)
-                                .await().indefinitely();
-                        return promotion;
-                    }).collect(Collectors.toList());
-
-                    return Uni.createFrom().item(promotions);
+                .onItem()
+                .transformToMulti(keys -> Multi.createFrom().iterable(keys))
+                .flatMap(key -> {
+                    return this.reactiveRedisDataSource
+                            .value(String.class, Promotion.class)
+                            .get(key).toMulti();
                 });
     }
 

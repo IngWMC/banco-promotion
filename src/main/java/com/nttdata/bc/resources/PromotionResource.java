@@ -1,7 +1,5 @@
 package com.nttdata.bc.resources;
 
-import java.util.List;
-
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.ResponseStatus;
 import org.jboss.resteasy.reactive.RestResponse.StatusCode;
@@ -9,6 +7,7 @@ import org.jboss.resteasy.reactive.RestResponse.StatusCode;
 import com.nttdata.bc.models.Promotion;
 import com.nttdata.bc.services.IPromotionService;
 
+import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -52,7 +51,7 @@ public class PromotionResource {
     @Path("/")
     @ResponseStatus(StatusCode.OK)
     @Produces(MediaType.APPLICATION_JSON)
-    public Uni<List<Promotion>> listAll() {
+    public Multi<Promotion> listAll() {
         return this.service.listAll();
     }
 
